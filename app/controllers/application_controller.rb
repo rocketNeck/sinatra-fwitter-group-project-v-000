@@ -15,7 +15,7 @@ class ApplicationController < Sinatra::Base
 ####################### signup flow ##################
   get '/signup' do
     if !logged_in?
-      erb :'/users/create_user'
+      erb :'users/create_user'
     else
       redirect to "/tweets"
     end
@@ -31,32 +31,31 @@ class ApplicationController < Sinatra::Base
     end
   end
 
-  get '/tweets' do
-    @user = User.find(session[:user_id])
-    @tweets = Tweet.all
-    erb :'/tweets'
-  end
+
 
 ################# log in flow ###################
   get '/login' do
-    if !logged_in?
-      erb :'/users/login'
-    else
-      redirect to "/tweets"
-    end
+   erb :'users/login'
   end
 
   post '/login' do
-    @user = User.find_by(username: params[:username])
+    @user = User.find(username: params[:username])
     if @user && @user.authenticate(params[:password])
       session[:user_id] = @user.id
-      redirect '/tweets'
+      redirect to "/tweets"
     else
-      redirect '/signup'
+      redirect to "/signup"
     end
   end
-
-
+###########################################################
+  get '/tweets' do
+    if logged_in?
+      @tweets = Tweet.all
+      erb :tweets
+    else
+      redirect '/login'
+    end
+  end
                  #must check password and set session
 
   #after logged in loads tweets.erb
