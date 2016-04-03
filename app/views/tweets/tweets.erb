@@ -1,2 +1,6 @@
-Welcome,
-recursivly list all tweets and have an edit link IF you are current user is the creator of that tweet
+<h1>Welcome, <%= @user.name %> </h1>
+<a href="/tweets/new">Create New Tweet</a>
+<%@tweets.each do |tweet|%>
+  <h3><%=tweet.user.username%></h3>
+  <p><%=tweet.content%></p><br><br>
+<%end%>
