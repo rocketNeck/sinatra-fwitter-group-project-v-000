@@ -15,7 +15,7 @@ class ApplicationController < Sinatra::Base
       erb :index
     end
   end
-  ####################### signup flow ##################
+  ####################### signup flow ##############
   get '/signup' do
     if logged_in?
       redirect to '/tweets'
@@ -25,7 +25,7 @@ class ApplicationController < Sinatra::Base
   end
 
   post '/signup' do
-    if params.any? { |k, v| v.empty? }
+    if params.any? { |_k, v| v.empty? }
       redirect '/signup'
     else
       @user = User.create(params)
@@ -51,15 +51,15 @@ class ApplicationController < Sinatra::Base
       redirect to '/signup'
     end
   end
-  ###########################################################
+  ##################################################
 
-  get '/tweets' do#########has session[:id]
+  get '/tweets' do
     if logged_in?
       @user = current_user
       @tweets = Tweet.all
       erb :'/tweets/tweets'
     else
-      redirect to '/login'########
+      redirect to '/login'
     end
   end
 
@@ -68,7 +68,7 @@ class ApplicationController < Sinatra::Base
       session.clear
       redirect '/login'
     else
-      redirect to '/tweets'##########
+      redirect to '/tweets'
     end
   end
 
@@ -81,12 +81,12 @@ class ApplicationController < Sinatra::Base
     if logged_in?
       erb :'/tweets/create_tweet'
     else
-      redirect to '/login'################
+      redirect to '/login'
     end
   end
 
   post '/tweets/new' do
-    if params[:content] == ""
+    if params[:content] == ''
       redirect '/tweets/new'
     else
       @tweet = Tweet.create(params)
@@ -96,59 +96,32 @@ class ApplicationController < Sinatra::Base
     end
   end
 
-  get "/tweets/:id" do
+  get '/tweets/:id' do
     if logged_in?
       @tweet = Tweet.find_by_id(params[:id])
       erb :"/tweets/show_tweet"
     else
-      redirect to '/login' #######################
+      redirect to '/login'
     end
   end
-  # after linking to the ('/tweets/new' renders create_tweet.erb) page you see a form to create a tweet or link back home
-  # //////////(maybe have a nav on every page to link around)
-  # you can only see the create tweet page if you are logged in
-  # creating a Tweet assigns that tweet to the User that created it
-  # once the form for the new tweet is submitted you are redirected.... to? you can not create a blank tweet
 
-  # see individual tweets with /tweets/:id renders show_tweets.erb
-
-  # there is a link here to allow you to edit   href="tweets/:id/edit"
-  # a user can only submit edit  IF they are the tweet creator
-  # when you edit a tweet you can not submit it without and contend     :content != ""
-  # edit page is /tweets/:id/edit  it renders edit_tweet.erb once the edit form is submited you are redirected....?
-
-
-
-
-  # get '/tweets/:id/edit' do
-  #   if logged_in?
-  #     @tweet = Tweet.find_by_id(params[:id])
-  #     erb :'/tweets/edit_tweet'
-  #   else
-  #     redirect to '/login'
-  #   end
-  # end
-
-
-
-  get '/tweets/:id/edit' do ######## this is the method you pasted for me the old one is above
-      if session[:id]
-        @tweet = Tweet.find_by_id(params[:id])
-        if @tweet.user_id == session[:id]
-         erb :'tweets/edit_tweet'
-        else
-          redirect to '/tweets'
-        end
+  get '/tweets/:id/edit' do
+    if logged_in?
+      @tweet = Tweet.find_by_id(params[:id])
+      if @tweet.user_id == session[:id]
+        erb :'/tweets/edit_tweet'
       else
-        redirect to '/login'
+        redirect to '/tweets'
       end
+    else
+      redirect to '/login'
+    end
   end
 
-
-  post '/tweets/:id/edit' do
+  patch '/tweets/:id/edit' do
     if !logged_in?
       redirect '/login'
-    elsif params[:content] = ''
+    elsif params[:content] == ''
       redirect to "/tweets/#{@tweet.id}/edit"
     else
       @tweet = Tweet.find_by_id(params[:id])
@@ -163,8 +136,7 @@ class ApplicationController < Sinatra::Base
     @tweet.delete if current_user.id == @tweet.user_id
     redirect to '/tweets'
   end
-  # need a "Delete Tweet" button on the /tweet/:id   erb :tweets page (uses a hidden for "DELETE" request)
-  # checks if the user is the tweet creator by checking the tweet forgin key
+
   helpers do
     def logged_in?
       !!session[:id]
