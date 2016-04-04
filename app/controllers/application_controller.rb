@@ -9,7 +9,11 @@ class ApplicationController < Sinatra::Base
   end
 
   get '/' do
-    erb :index
+    if logged_in?
+      redirect '/tweets'
+    else
+      erb :index
+    end
   end
   ####################### signup flow ##################
   get '/signup' do
@@ -39,28 +43,33 @@ class ApplicationController < Sinatra::Base
   end
 
   post '/login' do
-    @user = User.find_by(username: params[:username])
-  #  if @user && @user.authenticate(params[:password])
+    @user = User.find_by(params)
+    if @user
       session[:id] = @user.id
       redirect to '/tweets'
-  #  else
-    #  redirect to '/signup'
-  #  end
+    else
+      redirect to '/signup'
+    end
   end
   ###########################################################
 
-  get '/tweets' do
-    @tweets = Tweet.all
+  get '/tweets' do#########has session[:id]
     if logged_in?
-      erb :'tweets/tweets'
+      @user = current_user
+      @tweets = Tweet.all
+      erb :'/tweets/tweets'
     else
       redirect '/login'
     end
   end
 
   get '/logout' do
-    session.clear if logged_in?
-    redirect '/login'
+    if logged_in?
+      session.clear
+      redirect '/login'
+    else
+      redirect '/tweets'
+    end
   end
 
   get '/users/:slug' do
@@ -77,19 +86,20 @@ class ApplicationController < Sinatra::Base
   end
 
   post '/tweets/new' do
-    @tweet = Tweet.create(content: params[:content],
-                          user_id: session[:id])
-    if @tweet.content.empty?
+    if params[:content] == ""
       redirect '/tweets/new'
     else
+      @tweet = Tweet.create(params)
+      @tweet.user = current_user
+      @tweet.save
       redirect "/tweets/#{@tweet.id}"
     end
   end
 
-  get '/tweets/:id' do
-    @tweet = Tweet.find_by_id(params[:id])
+  get "/tweets/:id" do
     if logged_in?
-      erb :'tweets/show_tweet'
+      @tweet = Tweet.find_by_id(params[:id])
+      erb :"/tweets/show_tweet"
     else
       redirect '/login'
     end
@@ -106,29 +116,31 @@ class ApplicationController < Sinatra::Base
   # a user can only submit edit  IF they are the tweet creator
   # when you edit a tweet you can not submit it without and contend     :content != ""
   # edit page is /tweets/:id/edit  it renders edit_tweet.erb once the edit form is submited you are redirected....?
-  get '/tweet/:id/edit' do
-    @tweet = Tweet.find_by_id(params[:id])
+  get '/tweets/:id/edit' do
     if logged_in?
-      erb :'tweets/edit_tweet'
+      @tweet = Tweet.find_by_id(params[:id])
+      erb :"/tweets/edit_tweet"
     else
       redirect '/login'
     end
   end
 
-  patch '/tweets/:id/edit' do
-    @tweet = Tweet.find_by_id(params[:id])
-    @tweet.content = params[:content]
-    @tweet.save
-    if @tweet.contend != ''
-      redirect "/tweets/#{@tweet.id}"
-    else
+  post '/tweets/:id/edit' do
+    if !logged_in?
+      redirect '/login'
+    elsif params[:content] = ''
       redirect "/tweets/#{@tweet.id}/edit"
+    else
+      @tweet = Tweet.find_by_id(params[:id])
+      @tweet.content = params[:content]
+      @tweet.save
+      redirect "/tweets/#{@tweet.id}"
     end
   end
 
   delete '/tweets/:id/delete' do
     @tweet = Tweet.find_by_id(params[:id])
-    @tweet.delete if session[:id] == @tweet.user_id
+    @tweet.delete if current_user.id == @tweet.user_id
     redirect '/tweets'
   end
   # need a "Delete Tweet" button on the /tweet/:id   erb :tweets page (uses a hidden for "DELETE" request)
